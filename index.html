@@ -35,6 +35,13 @@
   button.rec.on { background:var(--red); border-color:var(--red); }
   button.rec { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:none; }
   .err { color:var(--red); font-weight:700; }
+  .card { position:relative; overflow:hidden; transition:background .15s; }
+  .card .ok { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:10px; background:var(--green);
+              color:#fff; font-weight:900; font-size:26px; opacity:0; pointer-events:none; transition:opacity .15s; }
+  .card.saved .ok { opacity:1; }
+  .card.failed { box-shadow:0 0 0 3px var(--red); }
+  .card.live { box-shadow:0 0 0 3px var(--red); }
+  .haptic { position:absolute; left:-9999px; }
   button:disabled { opacity:.4; }
   .card { background:#fff; border-radius:24px; padding:20px; margin:14px 0; box-shadow:0 2px 12px rgba(0,54,37,.06); }
   .sentence { font-size:21px; line-height:1.5; font-weight:500; }
@@ -80,7 +87,8 @@
   <section id="rec" class="hidden">
     <div class="small"><span id="pos"></span> · <span id="partlbl"></span> · speaker <span id="who"></span></div>
     <div class="progress"><div id="bar"></div></div>
-    <div class="card"><div class="sentence" id="text"></div></div>
+    <div class="card" id="card"><div class="sentence" id="text"></div><div class="ok">✓ Saved</div></div>
+    <label class="haptic" id="hapticlbl"><input type="checkbox" switch id="haptic"></label>
     <div class="small" style="font-weight:700">Where are you recording?</div>
     <div class="chips" id="envs">
       <button data-env="quiet">🤫 quiet room</button>
@@ -181,7 +189,8 @@ function show(id) { for (const s of ["start", "rec", "pause", "send"]) $(s).clas
 let msg = "";  // one-off status message for the next render (errors)
 function render() {
   const s = list()[state.i], n = list().length;
-  $("pos").textContent = `Sentence ${state.i + 1} of ${n}`;
+  $("pos").textContent = `Sentence ${state.i + 1} of ${n} · ${Object.keys(takes).length} saved`;
+  $("card").classList.remove("saved", "live"); $("card").classList.toggle("failed", msg.includes("err"));
   $("partlbl").textContent = `part ${s.part} of 2`;
   $("who").textContent = state.speaker;
   $("bar").style.width = `${(100 * Object.keys(takes).length) / n}%`;
@@ -199,6 +208,11 @@ function render() {
   $("next").textContent = state.i === n - 1 ? "Finish →" : "Next →";
 }
 
+// ---------- haptics: Android via vibrate(); iOS 18+ via the native switch control (only inside a touch gesture) ----------
+function buzz(pattern) {
+  if (navigator.vibrate) { navigator.vibrate(pattern); return; }
+  try { $("hapticlbl").click(); } catch (e) {}
+}
 // ---------- hold to record ----------
 const MIN_MS = 800, TAIL_MS = 350, SILENT_PEAK = 0.02;
 let holding = false, busy = false;
@@ -212,6 +226,7 @@ async function micReady() {
 }
 async function startRec(ev) {
   ev.preventDefault();
+  buzz(30);
   if (busy || (recorder && recorder.state === "recording")) return;
   holding = true;
   if (ev.pointerId !== undefined) try { $("recbtn").setPointerCapture(ev.pointerId); } catch (e) {}
@@ -226,10 +241,11 @@ async function startRec(ev) {
   recorder.onstop = () => finish(s, new Blob(chunks, { type: recorder.mimeType || "audio/webm" }), Math.round(performance.now() - t0));
   t0 = performance.now(); recorder.start();
   $("recbtn").textContent = "● Recording… release when done"; $("recbtn").classList.add("on");
-  $("status").textContent = "Recording…";
+  $("status").textContent = "Recording…"; $("card").classList.add("live");
   if (!holding) stopRec();  // released before the recorder started
 }
 function stopRec() {
+  if (holding && recorder && recorder.state === "recording") buzz(20);
   holding = false;
   if (!recorder || recorder.state !== "recording" || busy) return;
   busy = true;
@@ -249,12 +265,13 @@ async function check(blob, ms) {  // returns an error text, or "" if the take is
 async function finish(s, blob, ms) {
   const err = await check(blob, ms);
   busy = false;
-  if (err) { msg = '<span class="err">⚠️ ' + err + '</span>'; render(); return; }
+  if (err) { msg = '<span class="err">⚠️ ' + err + '</span>'; if (navigator.vibrate) navigator.vibrate([80, 60, 80, 60, 80]); render(); return; }
   state.retakes[s.id] = (state.retakes[s.id] || 0) + (takes[s.id] ? 1 : 0);
   takes[s.id] = blob; state.mime[s.id] = blob.type; state.dur[s.id] = ms;
   delete state.sent[s.id]; dbPut(key() + "|" + s.id, blob); save();
   msg = '<span class="done">✓ saved</span>'; render();
-  setTimeout(() => { if (list()[state.i] === s) $("next").onclick(); }, 600);  // auto-advance unless the user already moved
+  $("card").classList.add("saved"); if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
+  setTimeout(() => { if (list()[state.i] === s) $("next").onclick(); }, 900);  // auto-advance unless the user already moved
 }
 
 // ---------- sending ----------
