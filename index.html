@@ -36,7 +36,7 @@
 <main>
   <section id="start">
     <h1>Read 20 sentences aloud 🎙️</h1>
-    <p>We test how well our speech recognition understands <b>names</b>. All names are invented. Please read each sentence naturally, as if you were dictating a note after a meeting. Takes about 10 minutes.</p>
+    <p>We test how well our speech recognition understands <b>names</b>. All names are invented. Please read each sentence naturally, the way you would dictate a quick note after a meeting: casual is fine, and if you stumble, just keep going or record again. Takes about 10 minutes.</p>
     <p class="small">The recordings stay on your phone until you send them at the end. They are used only for internal research on speech recognition and deleted when the project ends.</p>
     <label for="speaker">Your speaker code (e.g. initials)</label>
     <input id="speaker" maxlength="12" placeholder="e.g. AM" autocomplete="off">
@@ -83,174 +83,538 @@ const SENTENCES = {
  "de": [
   {
    "id": "de01",
+   "type": 1,
    "text": "Ich hatte heute ein langes Gespräch mit Herrn Dr. Aßmann."
   },
   {
    "id": "de02",
+   "type": 1,
    "text": "Frau Schlaffer möchte nächste Woche ein Angebot bekommen."
   },
   {
    "id": "de03",
+   "type": 1,
    "text": "Andreas meinte, dass das Budget erst im Frühjahr freigegeben wird."
   },
   {
    "id": "de04",
+   "type": 2,
    "text": "Marianne Gross und Mara Menshikov waren beide am Stand und wollen eine Demo."
   },
   {
    "id": "de05",
+   "type": 2,
    "text": "Ich habe mit Han-na Behmer gesprochen, aber entscheiden wird Samuel Drywa."
   },
   {
    "id": "de06",
+   "type": 2,
    "text": "Severo Sibilla hat mich an Özgün Betil aus dem Einkauf verwiesen."
   },
   {
    "id": "de07",
+   "type": 3,
    "text": "Isak Cennetkuşu von Kärcher interessiert sich für die Integration."
   },
   {
    "id": "de08",
+   "type": 3,
    "text": "Bei Würth ist jetzt Bertram Augustine für das Thema zuständig."
   },
   {
    "id": "de09",
+   "type": 3,
    "text": "Mein Kontakt bei Bosch war Dan Rupp, sehr offen für einen Test."
   },
   {
    "id": "de10",
+   "type": 4,
    "text": "Ich habe Frau Vogel gesagt, dass wir uns nächste Woche melden."
   },
   {
    "id": "de11",
+   "type": 4,
    "text": "Mit Ludwik Fischer war das Gespräch kurz, aber gut."
   },
   {
    "id": "de12",
+   "type": 5,
    "text": "Bitte einen Termin mit Frau Krauth, äh, nein, Frau Krauch vereinbaren."
   },
   {
    "id": "de13",
+   "type": 5,
    "text": "Ähm, also, ich hatte ein Gespräch mit, äh, Ehm Mühe."
   },
   {
    "id": "de14",
+   "type": 5,
    "text": "Das war Silvius Bengsch, Moment, Silvius Benscheid natürlich."
   },
   {
    "id": "de15",
+   "type": 6,
    "text": "Gernreichs Team testet die App ab Montag."
   },
   {
    "id": "de16",
+   "type": 6,
    "text": "Laut Frau Ohlsens Einschätzung kommt der Auftrag im Mai."
   },
   {
    "id": "de17",
+   "type": 6,
    "text": "Wir warten noch auf Elimar Boettchers Rückmeldung."
   },
   {
    "id": "de18",
+   "type": 7,
    "text": "Kurze Notiz zum Messegespräch. Der Kunde ist ein Maschinenbauer mit etwa dreihundert Mitarbeitern und nutzt bisher Excel-Listen. Gesprochen habe ich mit Thomas Schwemmer aus dem Marketing. Wichtig war ihm die Anbindung an das CRM. Nächster Schritt ist eine Demo in zwei Wochen."
   },
   {
    "id": "de19",
+   "type": 8,
    "text": "Neuer Kontakt: Mathieu Prószyński, das schreibt sich P, R, Ó, S, Z, Y, Ń, S, K, I."
   },
   {
    "id": "de20",
+   "type": 8,
    "text": "Der Name ist Cauer, also C, A, U, E, R."
+  },
+  {
+   "id": "de21",
+   "type": 1,
+   "text": "Tobias meinte, das Budget ist quasi durch, also eigentlich safe."
+  },
+  {
+   "id": "de22",
+   "type": 1,
+   "text": "Der Höck will bis Freitag 'n Angebot haben, sonst wird's eng."
+  },
+  {
+   "id": "de23",
+   "type": 1,
+   "text": "Bei dem Freundlich war ich heut schon zum dritten Mal, langsam wird's was."
+  },
+  {
+   "id": "de24",
+   "type": 1,
+   "text": "Ich hab Frau Dr. Kowalewsky gesagt, wir melden uns, also ja, nächste Woche."
+  },
+  {
+   "id": "de25",
+   "type": 1,
+   "text": "Kannst du dem Grimmer bitte die Preisliste rüberschicken? Danke dir."
+  },
+  {
+   "id": "de26",
+   "type": 1,
+   "text": "Die Rohwer wants a quick demo, also bitte Follow-up schicken, asap."
+  },
+  {
+   "id": "de27",
+   "type": 2,
+   "text": "Waren zwei Leute da, Stefanos Farmakis und, ähm, Kristof Seubert, beide ziemlich interessiert."
+  },
+  {
+   "id": "de28",
+   "type": 2,
+   "text": "Marie-Éléonore Proskauer hat mich dann an Tanja Nissen weitergereicht, das ist jetzt der richtige Kontakt."
+  },
+  {
+   "id": "de29",
+   "type": 2,
+   "text": "Also entscheiden tut am Ende Susanna Clarenbach, Janine Malcolmi ist eher so Beeinflusser."
+  },
+  {
+   "id": "de30",
+   "type": 2,
+   "text": "Ja also Angelandrea Burgio, nee warte, Vali Schefold hat nach Preisen gefragt, Angelandrea Burgio ging's mehr um die Integration."
+  },
+  {
+   "id": "de31",
+   "type": 3,
+   "text": "Olimpia Likiernik von Kärcher, die wollen das CRM-Ding unbedingt testen."
+  },
+  {
+   "id": "de32",
+   "type": 3,
+   "text": "Kurz notiert: Bosch, Ansprechpartner Saroj Muslim, will 'nen Rückruf."
+  },
+  {
+   "id": "de33",
+   "type": 3,
+   "text": "Bei Würth läuft das über Anastazja Pieronek, aber der Einkauf hängt auch noch mit drin."
+  },
+  {
+   "id": "de34",
+   "type": 3,
+   "text": "Achtung, Tommaso Pupart ist nicht mehr bei Siemens, ist jetzt woanders."
+  },
+  {
+   "id": "de35",
+   "type": 4,
+   "text": "Mit der Winter war's echt nett, der Termin war aber viel zu kurz."
+  },
+  {
+   "id": "de36",
+   "type": 4,
+   "text": "Hans-Adolf Wolf hat gefragt, ob wir auch Visitenkarten scannen können."
+  },
+  {
+   "id": "de37",
+   "type": 5,
+   "text": "Notiz zu Bogumił Willmann, nee, Quatsch, Bogumił Wallmann."
+  },
+  {
+   "id": "de38",
+   "type": 5,
+   "text": "Das war, wie hieß das noch, ach ja, Bixio Stucki."
+  },
+  {
+   "id": "de39",
+   "type": 5,
+   "text": "Ich hab mit, äh, mit Romed von Degenfeld gesprochen, also mit der Geschäftsführung."
+  },
+  {
+   "id": "de40",
+   "type": 5,
+   "text": "Halb, ähm, Moriz Halb, genau, so war's."
+  },
+  {
+   "id": "de41",
+   "type": 5,
+   "text": "Shanta, also Shanta Hardegen vom Einkauf, hat sich nochmal gemeldet."
+  },
+  {
+   "id": "de42",
+   "type": 6,
+   "text": "Thomas Baals Chef muss das noch absegnen."
+  },
+  {
+   "id": "de43",
+   "type": 6,
+   "text": "Laut Ustas Aussage kommt die Freigabe Ende des Monats."
+  },
+  {
+   "id": "de44",
+   "type": 6,
+   "text": "Das ist Steinbrincks Baustelle, nicht unsere."
+  },
+  {
+   "id": "de45",
+   "type": 7,
+   "text": "Okay, Messe-Update. Viel los am Stand, Kaffee war leer, egal. Wichtigster Kontakt war Asiya Kazakov, die suchen was für ihren Außendienst, so zwanzig Leute. Budget gibt's wohl, Entscheidung so im März. Bitte Demo-Termin vorschlagen."
+  },
+  {
+   "id": "de46",
+   "type": 7,
+   "text": "Ja hallo, kurze Sprachnotiz, bin grad im Auto. Termin bei Würth lief gut, Hayat Çorbacıoğlu war dabei und noch jemand aus der IT, den Namen hab ich vergessen. Die wollen erstmal 'nen Piloten mit fünf Lizenzen."
+  },
+  {
+   "id": "de47",
+   "type": 8,
+   "text": "Sarina Boerner, schreibt sich B, O, E, R, N, E, R, also nicht so, wie man's spricht."
+  },
+  {
+   "id": "de48",
+   "type": 8,
+   "text": "Nachname Erşahin, Moment, ich buchstabier mal: E, R, Ş, A, H, I, N."
+  },
+  {
+   "id": "de49",
+   "type": 9,
+   "text": "Hab grad Monika Hardt getroffen, total random am Kaffeestand, aber super Gespräch."
+  },
+  {
+   "id": "de50",
+   "type": 9,
+   "text": "Meeting mit Lubo Bunz war nice, die Pain Points sind klar, next step ist ein Angebot."
+  },
+  {
+   "id": "de51",
+   "type": 9,
+   "text": "Puh. Also. Emanuel Hirschberg. Interessiert, aber erst nächstes Jahr. Fertig."
+  },
+  {
+   "id": "de52",
+   "type": 9,
+   "text": "Na ja, Leonie Faro war so semi begeistert, aber 'ne Testphase geht wohl klar."
   }
  ],
  "en": [
   {
    "id": "en01",
+   "type": 1,
    "text": "I had a long talk with Dr. Thornton today."
   },
   {
    "id": "en02",
+   "type": 1,
    "text": "Mr Syers would like to receive an offer next week."
   },
   {
    "id": "en03",
+   "type": 1,
    "text": "Matthew said the budget won't be released before spring."
   },
   {
    "id": "en04",
+   "type": 2,
    "text": "Fredi Pöschl and Joann Lyndhurst both came to the booth and want a demo."
   },
   {
    "id": "en05",
+   "type": 2,
    "text": "I spoke with Bushrod Ashburner, but Nedo Meneghetti will make the decision."
   },
   {
    "id": "en06",
+   "type": 2,
    "text": "Alessandra Robeson referred me to Rebecca Franzen from purchasing."
   },
   {
    "id": "en07",
+   "type": 3,
    "text": "Zhāo Sun from Philips is interested in the integration."
   },
   {
    "id": "en08",
+   "type": 3,
    "text": "At Vodafone, Antonio Peffer is now responsible for this topic."
   },
   {
    "id": "en09",
+   "type": 3,
    "text": "My contact at Unilever was Thalía Carnevale, very open to a trial."
   },
   {
    "id": "en10",
+   "type": 4,
    "text": "I told Mr Fox we'd get back to him next week."
   },
   {
    "id": "en11",
+   "type": 4,
    "text": "The meeting with Lawan Wood was short but good."
   },
   {
    "id": "en12",
+   "type": 5,
    "text": "Please book a meeting with Mr Brackett, uh, no, Mr Bracken."
   },
   {
    "id": "en13",
+   "type": 5,
    "text": "Um, so, I had a conversation with, uh, Qazi Mantri."
   },
   {
    "id": "en14",
+   "type": 5,
    "text": "That was Sarat Pinheiro, wait, Sarat Pinho of course."
   },
   {
    "id": "en15",
+   "type": 6,
    "text": "Gwendolen Powell's team will test the app from Monday."
   },
   {
    "id": "en16",
+   "type": 6,
    "text": "According to Ms Rhys-Davies's estimate, the order comes in May."
   },
   {
    "id": "en17",
+   "type": 7,
    "text": "Quick note on the booth conversation. The customer is a manufacturer with about three hundred employees and currently uses spreadsheets for leads. I spoke with Laura Hecker from marketing. CRM integration mattered most to her. Next step is a demo in two weeks."
   },
   {
    "id": "en18",
+   "type": 8,
    "text": "New contact: Lionnel Brée, that's spelled B, R, É, E."
   },
   {
    "id": "en19",
+   "type": 8,
    "text": "The name is Oxburgh, so O, X, B, U, R, G, H."
   },
   {
    "id": "en20",
+   "type": 8,
    "text": "Please add Neale Weber, last name spelled W, E, B, E, R."
+  },
+  {
+   "id": "en21",
+   "type": 1,
+   "text": "Emily said budget's basically locked in, so we're good."
+  },
+  {
+   "id": "en22",
+   "type": 1,
+   "text": "Need to circle back with Mr Douthit by Friday, or we lose 'em."
+  },
+  {
+   "id": "en23",
+   "type": 1,
+   "text": "Can you shoot Mr Sparke the price list? Cheers."
+  },
+  {
+   "id": "en24",
+   "type": 1,
+   "text": "Told Dr. Irvin we'd, uh, we'd get back to them next week."
+  },
+  {
+   "id": "en25",
+   "type": 2,
+   "text": "Two folks at the booth, Eligio Bacardit and, uh, Umar Issar, both pretty keen."
+  },
+  {
+   "id": "en26",
+   "type": 2,
+   "text": "Audrey Carroll handed me over to D'Arcy Goodley, who's running the project now."
+  },
+  {
+   "id": "en27",
+   "type": 2,
+   "text": "Final call's with Eniola Dreyer, Breogán de Monroy is more of an influencer."
+  },
+  {
+   "id": "en28",
+   "type": 2,
+   "text": "Yeah so Chandrakant Rajashekar, no wait, it was Janine Riker who asked about pricing, Chandrakant Rajashekar was more about the integration."
+  },
+  {
+   "id": "en29",
+   "type": 3,
+   "text": "Siu-Cheuk Yīng from Siemens, they really wanna try the CRM thingy."
+  },
+  {
+   "id": "en30",
+   "type": 3,
+   "text": "Quick note: Bosch, contact's Ruth Nicola, wants a callback."
+  },
+  {
+   "id": "en31",
+   "type": 3,
+   "text": "At Shell it all goes through Fredric Dorff, but purchasing is in the loop too."
+  },
+  {
+   "id": "en32",
+   "type": 3,
+   "text": "Heads up, Otho Gurlt isn't at Bosch anymore, moved somewhere else."
+  },
+  {
+   "id": "en33",
+   "type": 4,
+   "text": "Had a nice chat with Mr Hill, way too short though."
+  },
+  {
+   "id": "en34",
+   "type": 4,
+   "text": "Hampton Green asked if we can scan business cards too."
+  },
+  {
+   "id": "en35",
+   "type": 5,
+   "text": "Note on Bowen Massey, nah, scratch that, Bowen Messervy."
+  },
+  {
+   "id": "en36",
+   "type": 5,
+   "text": "That was, what's the name, oh right, Liana Morse."
+  },
+  {
+   "id": "en37",
+   "type": 5,
+   "text": "I talked to, uh, to Raphael Kahar, like, the head of sales."
+  },
+  {
+   "id": "en38",
+   "type": 5,
+   "text": "Beeman, um, Roanne Beeman, yeah, that's it."
+  },
+  {
+   "id": "en39",
+   "type": 5,
+   "text": "Gary, I mean Gary Boult from procurement, got back to me."
+  },
+  {
+   "id": "en40",
+   "type": 6,
+   "text": "Sarah Drysdale's boss still needs to sign off."
+  },
+  {
+   "id": "en41",
+   "type": 6,
+   "text": "Per Von dem Busche's team, approval lands end of month."
+  },
+  {
+   "id": "en42",
+   "type": 6,
+   "text": "Swung by Perrin's desk again today, third time, finally getting somewhere."
+  },
+  {
+   "id": "en43",
+   "type": 7,
+   "text": "Okay, show update. Booth was packed, coffee ran out, whatever. Best lead was Ada Levene, they're looking for something for their field reps, about twenty people. There's budget, decision around March. Please suggest a demo slot."
+  },
+  {
+   "id": "en44",
+   "type": 7,
+   "text": "Hey, quick voice memo, I'm driving. Meeting at Unilever went well, Marcello Hull was there plus someone from IT, forgot the name. They wanna start with a pilot, five licenses."
+  },
+  {
+   "id": "en45",
+   "type": 8,
+   "text": "Mohamed Jopling, spelled J, O, P, L, I, N, G, so not how it sounds."
+  },
+  {
+   "id": "en46",
+   "type": 8,
+   "text": "Last name Jing, hang on, let me spell it: J, I, N, G."
+  },
+  {
+   "id": "en47",
+   "type": 9,
+   "text": "Ran into Jawed Schumann-Heink at the coffee stand, totally random, but great chat."
+  },
+  {
+   "id": "en48",
+   "type": 9,
+   "text": "Meeting with Ignacy Eliáš was solid, pain points are clear, next step's an offer, gonna send it tomorrow-ish."
+  },
+  {
+   "id": "en49",
+   "type": 9,
+   "text": "Phew. Okay. Hakkı Kronenberg. Interested, but not till next year. Done."
+  },
+  {
+   "id": "en50",
+   "type": 9,
+   "text": "Talked to Selma Colaço, super nett, wants the Angebot by next week."
   }
  ]
 };
 
 const $ = (id) => document.getElementById(id);
-const state = { lang: "de", i: 0, speaker: "", accent: "", takes: {}, env: {} };
+const state = { lang: "de", i: 0, speaker: "", accent: "", takes: {}, env: {}, picked: [] };
 let recorder = null, chunks = [], stream = null;
 
-function list() { return SENTENCES[state.lang]; }
+const PER_SPEAKER = 20;
+function seeded(str) {  // small deterministic PRNG from the speaker code, so a reload gives the same sentences
+  let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+function shuffle(a, rnd) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function pickSentences(lang, code) {  // 20 sentences spread over all sentence types, round robin
+  const rnd = seeded(code.toLowerCase() + "|" + lang), groups = {};
+  for (const s of SENTENCES[lang]) (groups[s.type] = groups[s.type] || []).push(s);
+  const types = shuffle(Object.keys(groups), rnd); types.forEach((t) => shuffle(groups[t], rnd));
+  const out = [];
+  while (out.length < Math.min(PER_SPEAKER, SENTENCES[lang].length)) for (const t of types) if (groups[t].length && out.length < PER_SPEAKER) out.push(groups[t].shift());
+  return shuffle(out, rnd);
+}
+function list() { return state.picked; }
 function ext(mime) { return mime.includes("mp4") ? "m4a" : mime.includes("ogg") ? "ogg" : "webm"; }
 function fileName(s, take) {
   const code = state.speaker.replace(/[^A-Za-z0-9_-]/g, "") || "anon";
@@ -325,6 +689,7 @@ async function share() {
 $("go").onclick = () => {
   state.speaker = $("speaker").value.trim(); state.lang = $("lang").value; state.accent = $("accent").value.trim();
   if (!state.speaker) { $("speaker").focus(); return; }
+  state.picked = pickSentences(state.lang, state.speaker);
   state.i = 0; show("rec"); render();
 };
 $("recbtn").onclick = toggleRecord;
