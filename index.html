@@ -33,6 +33,8 @@
   button.primary { background:var(--dark); color:#fff; }
   button.rec { background:var(--green); border-color:var(--green); color:#fff; width:100%; font-size:20px; padding:18px; }
   button.rec.on { background:var(--red); border-color:var(--red); }
+  button.rec { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:none; }
+  .err { color:var(--red); font-weight:700; }
   button:disabled { opacity:.4; }
   .card { background:#fff; border-radius:24px; padding:20px; margin:14px 0; box-shadow:0 2px 12px rgba(0,54,37,.06); }
   .sentence { font-size:21px; line-height:1.5; font-weight:500; }
@@ -88,10 +90,9 @@
       <button data-env="car">🚗 car</button>
       <button data-env="noisy">🔊 other noisy</button>
     </div>
-    <div class="row"><button class="rec" id="recbtn">● Record</button></div>
+    <div class="row"><button class="rec" id="recbtn">● Hold to record</button></div>
     <div id="status" class="small" style="margin-top:8px"></div>
     <audio id="play" controls class="hidden"></audio>
-    <label class="check hidden" id="misreadbox"><input type="checkbox" id="misread"><span>I said something different from the text (e.g. a different name or word)</span></label>
     <div class="row">
       <button id="prev">← Back</button>
       <button id="next" class="primary">Next →</button>
@@ -127,7 +128,7 @@ const $ = (id) => document.getElementById(id);
 const PART = 20;
 const url = new URLSearchParams(location.search);
 const state = { lang: "de", i: 0, speaker: "", slot: 0, slotSource: "", accent: "", region: "", gender: "", consent: "",
-                env: {}, misread: {}, retakes: {}, dur: {}, mime: {}, sent: {}, picked: [], lastEnv: "quiet", audio: {} };
+                env: {}, retakes: {}, dur: {}, mime: {}, sent: {}, picked: [], lastEnv: "quiet", audio: {} };
 const takes = {};  // id -> Blob (also persisted in IndexedDB)
 let recorder = null, chunks = [], stream = null, t0 = 0;
 
@@ -177,6 +178,7 @@ async function restore() {
 
 // ---------- UI ----------
 function show(id) { for (const s of ["start", "rec", "pause", "send"]) $(s).classList.toggle("hidden", s !== id); window.scrollTo(0, 0); }
+let msg = "";  // one-off status message for the next render (errors)
 function render() {
   const s = list()[state.i], n = list().length;
   $("pos").textContent = `Sentence ${state.i + 1} of ${n}`;
@@ -188,33 +190,71 @@ function render() {
   document.querySelectorAll("#envs button").forEach((b) => b.classList.toggle("on", b.dataset.env === state.env[s.id]));
   const take = takes[s.id];
   $("play").classList.toggle("hidden", !take);
-  $("misreadbox").classList.toggle("hidden", !take);
-  $("misread").checked = !!state.misread[s.id];
   if (take) $("play").src = URL.createObjectURL(take);
-  $("status").innerHTML = take ? '<span class="done">✓ recorded</span> · listen, or record again' : "Press record, read the sentence, press stop.";
-  $("recbtn").textContent = "● Record"; $("recbtn").classList.remove("on");
+  if (msg) $("status").innerHTML = msg;
+  else $("status").innerHTML = take ? '<span class="done">✓ recorded</span> · hold the button to record again' : "Hold the button while you read, release when you are done.";
+  msg = "";
+  $("recbtn").textContent = "● Hold to record"; $("recbtn").classList.remove("on");
   $("prev").disabled = state.i === 0;
   $("next").textContent = state.i === n - 1 ? "Finish →" : "Next →";
 }
 
-async function toggleRecord() {
-  if (recorder && recorder.state === "recording") { recorder.stop(); return; }
+// ---------- hold to record ----------
+const MIN_MS = 800, TAIL_MS = 350, SILENT_PEAK = 0.02;
+let holding = false, busy = false;
+async function micReady() {
+  if (stream) return true;
   try {
-    stream = stream || await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true } });
-  } catch (e) { $("status").textContent = "Microphone not available: " + e.message + ". Please allow microphone access for this page."; return; }
-  if (!state.audio.sampleRate) { const st = stream.getAudioTracks()[0].getSettings(); state.audio = { sampleRate: st.sampleRate || null, channelCount: st.channelCount || null }; }
-  chunks = []; recorder = new MediaRecorder(stream);
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true } });
+    const st = stream.getAudioTracks()[0].getSettings(); state.audio = { sampleRate: st.sampleRate || null, channelCount: st.channelCount || null };
+    return true;
+  } catch (e) { $("status").innerHTML = '<span class="err">Microphone not available: ' + e.message + '.</span> Please allow microphone access for this page.'; return false; }
+}
+async function startRec(ev) {
+  ev.preventDefault();
+  if (busy || (recorder && recorder.state === "recording")) return;
+  holding = true;
+  if (ev.pointerId !== undefined) try { $("recbtn").setPointerCapture(ev.pointerId); } catch (e) {}
+  if (!stream) {  // first press: the permission prompt interrupts the hold, so only get the mic ready
+    holding = false;
+    if (await micReady()) $("status").textContent = "Microphone ready. Now hold the button while you read.";
+    return;
+  }
   const s = list()[state.i];
+  chunks = []; recorder = new MediaRecorder(stream);
   recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-  recorder.onstop = () => {
-    const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
-    state.retakes[s.id] = (state.retakes[s.id] || 0) + (takes[s.id] ? 1 : 0);
-    takes[s.id] = blob; state.mime[s.id] = blob.type; state.dur[s.id] = Math.round(performance.now() - t0);
-    delete state.sent[s.id]; dbPut(key() + "|" + s.id, blob); save(); render();
-  };
+  recorder.onstop = () => finish(s, new Blob(chunks, { type: recorder.mimeType || "audio/webm" }), Math.round(performance.now() - t0));
   t0 = performance.now(); recorder.start();
-  $("recbtn").textContent = "■ Stop"; $("recbtn").classList.add("on");
-  $("status").textContent = "Recording… read the sentence, then press stop.";
+  $("recbtn").textContent = "● Recording… release when done"; $("recbtn").classList.add("on");
+  $("status").textContent = "Recording…";
+  if (!holding) stopRec();  // released before the recorder started
+}
+function stopRec() {
+  holding = false;
+  if (!recorder || recorder.state !== "recording" || busy) return;
+  busy = true;
+  setTimeout(() => recorder.stop(), TAIL_MS);  // people release while still saying the last syllable
+}
+async function check(blob, ms) {  // returns an error text, or "" if the take is usable
+  if (ms < MIN_MS) return "Too short. Hold the button the whole time while you read.";
+  if (!blob.size) return "The recording failed (empty). Please record again.";
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const a = await ac.decodeAudioData(await blob.arrayBuffer()); ac.close && ac.close();
+    let peak = 0; const d = a.getChannelData(0); for (let i = 0; i < d.length; i += 4) peak = Math.max(peak, Math.abs(d[i]));
+    if (peak < SILENT_PEAK) return "We heard nothing. Check that the microphone is not covered and record again.";
+  } catch (e) { if (blob.size < 2000) return "The recording failed. Please record again."; }  // some browsers cannot decode their own format: accept if not tiny
+  return "";
+}
+async function finish(s, blob, ms) {
+  const err = await check(blob, ms);
+  busy = false;
+  if (err) { msg = '<span class="err">⚠️ ' + err + '</span>'; render(); return; }
+  state.retakes[s.id] = (state.retakes[s.id] || 0) + (takes[s.id] ? 1 : 0);
+  takes[s.id] = blob; state.mime[s.id] = blob.type; state.dur[s.id] = ms;
+  delete state.sent[s.id]; dbPut(key() + "|" + s.id, blob); save();
+  msg = '<span class="done">✓ saved</span>'; render();
+  setTimeout(() => { if (list()[state.i] === s) $("next").onclick(); }, 600);  // auto-advance unless the user already moved
 }
 
 // ---------- sending ----------
@@ -223,7 +263,7 @@ function metaFile(part) {
                  first_language: state.accent, region: state.region, gender: state.gender, consent: state.consent,
                  sent: new Date().toISOString(), audio: state.audio, user_agent: navigator.userAgent,
                  sentences: list().filter((s) => takes[s.id]).map((s) => ({ id: s.id, text: s.text, type: s.type, core: s.core, part: s.part,
-                   env: state.env[s.id] || "quiet", misread: !!state.misread[s.id], retakes: state.retakes[s.id] || 0,
+                   env: state.env[s.id] || "quiet", retakes: state.retakes[s.id] || 0,
                    duration_ms: state.dur[s.id] || null, mime: state.mime[s.id] || null, file: fileName(s) })) };
   return new File([JSON.stringify(meta, null, 1)], `${code()}_s${state.slot}_${state.lang}_meta_p${part}.json`, { type: "application/json" });
 }
@@ -261,9 +301,12 @@ $("go").onclick = async () => {
   state.gender = $("gender").value || state.gender; state.consent = state.consent || new Date().toISOString();
   if (resumed) state.i = Math.min(list().findIndex((s) => !takes[s.id]) === -1 ? list().length - 1 : list().findIndex((s) => !takes[s.id]), list().length - 1);
   else state.i = 0;
-  save(); show("rec"); render();
+  save(); show("rec"); render(); micReady();  // ask for the mic now, not in the middle of the first hold
 };
-$("recbtn").onclick = toggleRecord;
+const rb = $("recbtn");
+rb.addEventListener("pointerdown", startRec);
+for (const ev of ["pointerup", "pointercancel"]) rb.addEventListener(ev, stopRec);
+rb.addEventListener("contextmenu", (e) => e.preventDefault());
 $("prev").onclick = () => { if (state.i > 0) { state.i--; save(); render(); } };
 $("next").onclick = () => {
   const n = list().length;
@@ -275,7 +318,6 @@ $("cont").onclick = () => { show("rec"); render(); };
 $("back").onclick = () => { show("rec"); render(); };
 $("share1").onclick = () => share(1);
 $("share2").onclick = () => share(2);
-$("misread").onchange = (e) => { state.misread[list()[state.i].id] = e.target.checked; save(); };
 document.querySelectorAll("#envs button").forEach((b) => b.onclick = () => { state.env[list()[state.i].id] = b.dataset.env; state.lastEnv = b.dataset.env; save(); render(); });
 window.addEventListener("beforeunload", (e) => { if (list().some((s) => takes[s.id] && !state.sent[s.id])) { e.preventDefault(); e.returnValue = ""; } });
 </script>
